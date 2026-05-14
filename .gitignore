@@ -4,6 +4,7 @@ build/
 *.xcuserstate
 *.xcscmblueprint
 xcuserdata/
+*.xcsettings
 
 # Swift Package Manager
 .build/

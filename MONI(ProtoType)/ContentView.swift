@@ -2,7 +2,7 @@
 //  ContentView.swift
 //  MONI(ProtoType)
 //
-//  Created by SUDØ on 5/14/26.
+//  
 //
 
 import SwiftUI

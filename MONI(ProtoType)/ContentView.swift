@@ -37,18 +37,16 @@ struct ContentView: View {
     var body: some View {
         NavigationStack {
             ZStack(alignment: .top) {
-                Color.moniGroupedBackground.ignoresSafeArea()
+                Color.white.ignoresSafeArea()
 
                 ScrollView(showsIndicators: false) {
-                    VStack(spacing: 18) {
+                    VStack(spacing: 0) {
                         HeroBalanceView(
                             balance: balance,
                             income: monthIncome,
                             expense: monthExpense,
                             isSubscribed: $isSubscribed
                         )
-                        .padding(.horizontal, 18)
-                        .padding(.top, 8)
 
                         VStack(spacing: 14) {
                             quickActionsView
@@ -58,9 +56,15 @@ struct ContentView: View {
                             featureListView
                         }
                         .padding(.horizontal, 18)
+                        .padding(.top, -6)
                         .padding(.bottom, 24)
+                        .background(alignment: .top) {
+                            ContentTopMist()
+                                .offset(y: -82)
+                        }
                     }
                 }
+                .ignoresSafeArea(edges: .top)
             }
             .toolbar(.hidden, for: .navigationBar)
             .sheet(item: $selectedQuickAction) { action in
@@ -77,7 +81,7 @@ struct ContentView: View {
     }
 
     private var quickActionsView: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 14) {
             HStack {
                 SectionTitle("빠른 실행")
                 Spacer()
@@ -268,17 +272,14 @@ private struct HeroBalanceView: View {
 
             VStack(alignment: .leading, spacing: 24) {
                 HStack(alignment: .center) {
-                    HStack(spacing: 10) {
+                    HStack(alignment: .center, spacing: 12) {
                         AppMark()
 
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("MONI")
-                                .font(.headline.weight(.black))
-                                .foregroundStyle(mood.textColor)
-                            Text(mood.subtitle)
-                                .font(.caption.weight(.semibold))
-                                .foregroundStyle(mood.textColor.opacity(0.68))
-                        }
+                        Text("MONI")
+                            .font(.system(size: 24, weight: .black, design: .rounded))
+                            .foregroundStyle(mood.textColor)
+                            .tracking(0.6)
+                            .frame(height: 46, alignment: .center)
                     }
 
                     Spacer()
@@ -314,20 +315,25 @@ private struct HeroBalanceView: View {
                     HeroMetric(title: "지출", value: expense.wonText, symbol: "arrow.up.right", tint: .moniRed, mood: mood)
                 }
             }
-            .padding(22)
+            .padding(.horizontal, 24)
+            .padding(.top, 76)
+            .padding(.bottom, 82)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .frame(minHeight: 280)
+            .frame(minHeight: 392, alignment: .top)
             .background {
                 SkyBackground(mood: mood)
             }
-            .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
             .overlay(alignment: .topTrailing) {
                 Image(systemName: mood.symbol)
-                    .font(.system(size: 78, weight: .semibold))
+                    .font(.system(size: mood.symbolSize, weight: .semibold))
                     .foregroundStyle(.white.opacity(mood.symbolOpacity))
-                    .padding(.top, 70)
-                    .padding(.trailing, 26)
+                    .shadow(color: mood.glowColor.opacity(mood.glowOpacity), radius: 24)
+                    .padding(.top, 148)
+                    .padding(.trailing, 34)
                     .accessibilityHidden(true)
+            }
+            .overlay(alignment: .bottom) {
+                BottomSkyFade()
             }
         }
     }
@@ -340,17 +346,153 @@ private struct SkyBackground: View {
         ZStack {
             LinearGradient(colors: mood.colors, startPoint: .topLeading, endPoint: .bottomTrailing)
 
+            LinearGradient(colors: mood.atmosphereColors, startPoint: .topTrailing, endPoint: .bottomLeading)
+                .blendMode(.softLight)
+
+            LinearGradient(
+                colors: [.clear, mood.horizonColor.opacity(0.45), .white.opacity(0.88)],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .blendMode(mood.isNight ? .screen : .softLight)
+
+            if !mood.isNight {
+                SunRayLayer(mood: mood)
+            }
+
+            Circle()
+                .fill(mood.glowColor.opacity(mood.glowOpacity))
+                .frame(width: mood.primaryGlowSize, height: mood.primaryGlowSize)
+                .blur(radius: mood.isNight ? 34 : 24)
+                .offset(x: mood.isNight ? 120 : -108, y: mood.isNight ? -52 : -116)
+
+            SoftCloudLayer(mood: mood)
+
+            if mood.isNight {
+                StarField()
+                    .opacity(0.64)
+            }
+        }
+        .ignoresSafeArea(edges: .top)
+    }
+}
+
+private struct SunRayLayer: View {
+    let mood: SkyMood
+
+    var body: some View {
+        ZStack {
+            Capsule()
+                .fill(.white.opacity(0.14))
+                .frame(width: 300, height: 32)
+                .blur(radius: 16)
+                .rotationEffect(.degrees(-18))
+                .offset(x: 80, y: -74)
+
+            Capsule()
+                .fill(mood.glowColor.opacity(0.16))
+                .frame(width: 240, height: 22)
+                .blur(radius: 14)
+                .rotationEffect(.degrees(-18))
+                .offset(x: -80, y: 36)
+        }
+    }
+}
+
+private struct SoftCloudLayer: View {
+    let mood: SkyMood
+
+    var body: some View {
+        ZStack {
             Circle()
                 .fill(.white.opacity(mood.cloudOpacity))
-                .frame(width: 170, height: 170)
-                .blur(radius: 18)
-                .offset(x: -92, y: -98)
+                .frame(width: 220, height: 220)
+                .blur(radius: 30)
+                .offset(x: -132, y: 14)
 
             Circle()
                 .fill(.white.opacity(mood.cloudOpacity * 0.8))
-                .frame(width: 230, height: 230)
-                .blur(radius: 28)
-                .offset(x: 138, y: 130)
+                .frame(width: 280, height: 280)
+                .blur(radius: 42)
+                .offset(x: 148, y: 154)
+
+            Capsule()
+                .fill(.white.opacity(mood.cloudOpacity * 0.72))
+                .frame(width: 260, height: 64)
+                .blur(radius: 24)
+                .offset(x: -16, y: 190)
+        }
+    }
+}
+
+private struct BottomSkyFade: View {
+    var body: some View {
+        Rectangle()
+            .fill(
+                LinearGradient(
+                    colors: [
+                        .clear,
+                        .white.opacity(0.26),
+                        .white.opacity(0.84),
+                        .white
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            )
+            .frame(height: 190)
+            .blur(radius: 16)
+            .allowsHitTesting(false)
+    }
+}
+
+private struct ContentTopMist: View {
+    var body: some View {
+        VStack(spacing: 0) {
+            Rectangle()
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            .white.opacity(0),
+                            .white.opacity(0.76),
+                            .white
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+                .frame(height: 96)
+                .blur(radius: 18)
+
+            Rectangle()
+                .fill(.white)
+                .frame(height: 80)
+        }
+        .allowsHitTesting(false)
+    }
+}
+
+private struct StarField: View {
+    private let stars: [CGPoint] = [
+        CGPoint(x: 0.16, y: 0.22),
+        CGPoint(x: 0.32, y: 0.15),
+        CGPoint(x: 0.54, y: 0.25),
+        CGPoint(x: 0.76, y: 0.16),
+        CGPoint(x: 0.88, y: 0.35),
+        CGPoint(x: 0.22, y: 0.46),
+        CGPoint(x: 0.66, y: 0.46),
+        CGPoint(x: 0.44, y: 0.58),
+        CGPoint(x: 0.82, y: 0.62)
+    ]
+
+    var body: some View {
+        GeometryReader { proxy in
+            ForEach(Array(stars.enumerated()), id: \.offset) { index, point in
+                Circle()
+                    .fill(.white.opacity(index.isMultiple(of: 2) ? 0.82 : 0.46))
+                    .frame(width: index.isMultiple(of: 3) ? 3 : 2, height: index.isMultiple(of: 3) ? 3 : 2)
+                    .position(x: proxy.size.width * point.x, y: proxy.size.height * point.y)
+            }
         }
     }
 }
@@ -398,7 +540,8 @@ private struct HeroMetric: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
-        .background(.white.opacity(mood.metricOpacity), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .background(.white.opacity(mood.metricOpacity), in: Capsule())
+        .overlay(Capsule().stroke(.white.opacity(mood.metricStrokeOpacity), lineWidth: 1))
     }
 }
 
@@ -653,26 +796,55 @@ private struct SkyMood {
     var colors: [Color] {
         switch hour {
         case 5..<11:
-            return [Color(red: 0.79, green: 0.91, blue: 1.0), Color(red: 0.98, green: 0.88, blue: 0.63)]
+            return [
+                Color(red: 0.58, green: 0.80, blue: 1.0),
+                Color(red: 0.99, green: 0.76, blue: 0.56),
+                Color(red: 1.0, green: 0.93, blue: 0.78)
+            ]
         case 11..<17:
-            return [Color(red: 0.48, green: 0.76, blue: 1.0), Color(red: 0.82, green: 0.94, blue: 1.0)]
+            return [
+                Color(red: 0.34, green: 0.67, blue: 1.0),
+                Color(red: 0.72, green: 0.91, blue: 1.0),
+                Color(red: 0.98, green: 0.98, blue: 0.90)
+            ]
         case 17..<20:
-            return [Color(red: 1.0, green: 0.69, blue: 0.48), Color(red: 0.52, green: 0.66, blue: 0.98)]
+            return [
+                Color(red: 0.98, green: 0.46, blue: 0.48),
+                Color(red: 0.54, green: 0.49, blue: 0.96),
+                Color(red: 0.98, green: 0.77, blue: 0.88)
+            ]
         default:
-            return [Color(red: 0.18, green: 0.27, blue: 0.50), Color(red: 0.38, green: 0.45, blue: 0.75)]
+            return [
+                Color(red: 0.04, green: 0.07, blue: 0.20),
+                Color(red: 0.15, green: 0.20, blue: 0.43),
+                Color(red: 0.44, green: 0.49, blue: 0.75)
+            ]
+        }
+    }
+
+    var atmosphereColors: [Color] {
+        switch hour {
+        case 5..<11:
+            return [.white.opacity(0.26), Color(red: 1.0, green: 0.70, blue: 0.48).opacity(0.34), .clear]
+        case 11..<17:
+            return [.white.opacity(0.28), Color(red: 0.50, green: 0.88, blue: 1.0).opacity(0.24), .clear]
+        case 17..<20:
+            return [Color(red: 1.0, green: 0.78, blue: 0.44).opacity(0.34), Color(red: 0.72, green: 0.48, blue: 0.98).opacity(0.26), .clear]
+        default:
+            return [Color(red: 0.72, green: 0.80, blue: 1.0).opacity(0.18), Color(red: 0.36, green: 0.30, blue: 0.72).opacity(0.24), .clear]
         }
     }
 
     var subtitle: String {
         switch hour {
         case 5..<11:
-            return "좋은 아침이에요"
+            return "천천히 시작하는 아침"
         case 11..<17:
-            return "오늘 소비도 맑게"
+            return "햇살처럼 가벼운 소비"
         case 17..<20:
-            return "저녁 예산 확인"
+            return "노을 아래 예산 정리"
         default:
-            return "하루 정리 시간"
+            return "고요하게 하루 정리"
         }
     }
 
@@ -687,24 +859,70 @@ private struct SkyMood {
         }
     }
 
+    var isNight: Bool {
+        hour >= 20 || hour < 5
+    }
+
     var textColor: Color {
-        hour >= 20 || hour < 5 ? .white : Color(red: 0.08, green: 0.13, blue: 0.20)
+        isNight ? .white : Color(red: 0.08, green: 0.13, blue: 0.20)
     }
 
     var buttonOpacity: Double {
-        hour >= 20 || hour < 5 ? 0.18 : 0.55
+        isNight ? 0.18 : 0.52
     }
 
     var metricOpacity: Double {
-        hour >= 20 || hour < 5 ? 0.18 : 0.48
+        isNight ? 0.16 : 0.44
+    }
+
+    var metricStrokeOpacity: Double {
+        isNight ? 0.16 : 0.34
     }
 
     var cloudOpacity: Double {
-        hour >= 20 || hour < 5 ? 0.12 : 0.36
+        isNight ? 0.10 : 0.34
     }
 
     var symbolOpacity: Double {
-        hour >= 20 || hour < 5 ? 0.18 : 0.26
+        isNight ? 0.28 : 0.24
+    }
+
+    var symbolSize: CGFloat {
+        isNight ? 94 : 86
+    }
+
+    var glowColor: Color {
+        switch hour {
+        case 5..<11:
+            return Color(red: 1.0, green: 0.80, blue: 0.44)
+        case 11..<17:
+            return Color(red: 1.0, green: 0.93, blue: 0.48)
+        case 17..<20:
+            return Color(red: 1.0, green: 0.50, blue: 0.52)
+        default:
+            return Color(red: 0.74, green: 0.78, blue: 1.0)
+        }
+    }
+
+    var glowOpacity: Double {
+        isNight ? 0.34 : 0.42
+    }
+
+    var horizonColor: Color {
+        switch hour {
+        case 5..<11:
+            return Color(red: 1.0, green: 0.86, blue: 0.68)
+        case 11..<17:
+            return Color(red: 0.86, green: 0.96, blue: 1.0)
+        case 17..<20:
+            return Color(red: 1.0, green: 0.74, blue: 0.64)
+        default:
+            return Color(red: 0.62, green: 0.65, blue: 0.88)
+        }
+    }
+
+    var primaryGlowSize: CGFloat {
+        isNight ? 210 : 240
     }
 }
 
